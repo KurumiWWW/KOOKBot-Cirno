@@ -1,17 +1,14 @@
 import { bot } from 'init/client';
-import { echoMenu } from './commands/echo/echo.menu';
-import { testKmd } from './commands/your-command/your-command.some-app.app';
+import { commandList } from 'commands';
 
 bot.messageSource.on('message', (e) => {
-    bot.logger.debug(`received:`, e);
-    // 如果想要在console里查看收到信息也可以用
-    console.log(e);
+    console.debug(`公屏消息:`, e);
 });
 
-bot.addCommands(echoMenu);
-bot.addCommands(testKmd);
+commandList.forEach((command) => {
+    bot.addCommands(command);
+});
 
 bot.connect();
-console.log('bot connect successful');
 
-bot.logger.debug('system init success');
+console.debug('system init success');
