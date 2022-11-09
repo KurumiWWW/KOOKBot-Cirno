@@ -34,7 +34,7 @@ class GetDraw extends AppCommand {
         console.log(res);
         if (res.imgUrls.length == 0) {
             return session.quote(
-                `你先别急，还没画完，预计等待时间${res.waiting}`
+                `还没画完，预计等待时间${res.waiting}`
             );
         } else {
             let arr = res.imgUrls.map(
