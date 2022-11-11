@@ -6,18 +6,48 @@ import {
     getImgReqBody,
     text2ImgReqBody,
 } from '../../api/index';
+import { bot } from '../../init/client';
 
-const handleDraw = async (p: string): Promise<string> => {
+const handleDraw = async (session: BaseSession): Promise<string> => {
     const token = await (await getPaintingToken()).data.data;
     const form: text2ImgReqBody = {
         access_token: token,
-        text: p.split(';')[0],
-        style: p.split(';')[1],
-        resolution: p.split(';')[2],
+        text: `${session.args}`.split(';')[0],
+        style: `${session.args}`.split(';')[1],
+        resolution: `${session.args}`.split(';')[2],
     };
-    const id = await await (await textToImg(form)).data.data.taskId;
+    const res = (await textToImg(form)).data;
 
-    return `已开始绘图，您的任务id是${id}`;
+    if (res.code != 0) {
+        return '出现错误';
+    }
+    const form2: getImgReqBody = {
+        access_token: token,
+        taskId: res.data.taskId,
+    };
+    const res2 = (await getImg(form2)).data;
+
+    bot.API.message.create(
+        1,
+        session.channel.id,
+        `已开始绘图，预计等待时间：${res2.data.waiting}...`,
+        session.msg.msgId
+    );
+
+    // 步进值（轮询频率） ms
+    const step = 5000;
+    return new Promise((resolve, reject) => {
+        setInterval(async () => {
+            const res2 = (await getImg(form2)).data;
+            if (res2.data.imgUrls.length > 0) {
+                let arr = res.imgUrls.map(
+                    (item: any) => `[${item.image}](${item.image})`
+                );
+                // return
+                resolve(arr.join('\n'));
+            }
+        }, step);
+    });
 };
 
 class Draw extends AppCommand {
@@ -32,7 +62,7 @@ class Draw extends AppCommand {
         if (!session.args.length) {
             return session.reply(this.help);
         }
-        const res = await handleDraw(`${session.args}`);
+        const res = await handleDraw(session);
         return session.quote(res);
     };
 }
