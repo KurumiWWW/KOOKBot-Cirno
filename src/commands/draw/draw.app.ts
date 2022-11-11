@@ -26,25 +26,29 @@ const handleDraw = async (session: BaseSession): Promise<string> => {
         taskId: res.data.taskId,
     };
     const res2 = (await getImg(form2)).data;
+    const userId = session.userId;
 
     bot.API.message.create(
         1,
         session.channel.id,
-        `已开始绘图，预计等待时间：${res2.data.waiting}...`,
+        `(met)${userId}(met) 已开始绘图，预计等待时间：${res2.data.waiting}...`,
         session.msg.msgId
     );
 
     // 步进值（轮询频率） ms
-    const step = 5000;
+    const step = 10000;
     return new Promise((resolve, reject) => {
-        setInterval(async () => {
+        let timer = setInterval(async () => {
             const res2 = (await getImg(form2)).data;
+            console.log(res2);
+
             if (res2.data.imgUrls.length > 0) {
-                let arr = res.imgUrls.map(
+                let arr = res2.data.imgUrls.map(
                     (item: any) => `[${item.image}](${item.image})`
                 );
                 // return
-                resolve(arr.join('\n'));
+                clearInterval(timer);
+                resolve(`(met)${userId}(met) \n${arr.join('\n')}`);
             }
         }, step);
     });
